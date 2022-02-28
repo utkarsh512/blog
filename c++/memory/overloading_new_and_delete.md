@@ -27,9 +27,9 @@ void *operator new[](size_t n, char setv) {
 }
 
 // above overloading must be used as
-char *p = new ('#') char[10];
-                ^
-                additional parameters goes here
+// char *p = new ('#') char[10];
+//                 ^
+//                 additional parameters goes here
 ```
 
 * Overloading `operator delete[]`
