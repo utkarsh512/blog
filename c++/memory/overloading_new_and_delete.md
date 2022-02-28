@@ -25,6 +25,11 @@ void *operator new[](size_t n, char setv) {
   memset(p, setv, sizeof(p));
   return p;
 }
+
+// above overloading must be used as
+char *p = new ('#') char[10];
+                ^
+                additional parameters goes here
 ```
 
 * Overloading `operator delete[]`
