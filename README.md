@@ -1,1 +1,1 @@
-Questions whose answers make you think HARDER.
+Tips and tricks for C++ scripting and building.
