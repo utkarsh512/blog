@@ -1,5 +1,4 @@
-# Computer Science Concepts
-
+# blog
 ## What's New?
 * [Semaphores in Operating Systems](os/semaphore)
 * [Order of Initialization of Data Members of a `C++` Class](c++/ctor-dtor/order-of-initialization-of-data-members)
