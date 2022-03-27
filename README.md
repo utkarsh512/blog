@@ -2,9 +2,9 @@
 
 ## Blogs 
 
-* [C++](/c++/)
-* [Operating Systems](/os/)
-* [make tutorial](/make/)
+* [C++](c++/)
+* [Operating Systems](os/)
+* [make tutorial](make/)
 
 ## Lecture Playlists
 
