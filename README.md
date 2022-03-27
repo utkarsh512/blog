@@ -1,9 +1,17 @@
-# References
+# Computer Science Fundamentals
 
-## C++
+## Blogs 
+
+* [C++](/c++/)
+* [Operating Systems](/os/)
+* [make tutorial](/make/)
+
+## Lecture Playlists
+
+### C++
 
 * [NPTEL lectures by Prof. Partha Pratim Das (IITKGP CSE)](https://archive.nptel.ac.in/courses/106/105/106105234/)
 
-## Computer Architecture
+### Computer Architecture
 
 * [UC Berkeley CS61C Youtube Playlist](https://www.youtube.com/playlist?list=PLhMnuBfGeCDM8pXLpqib90mDFJI-e1lpk)
