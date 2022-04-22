@@ -5,6 +5,7 @@ Decorators are a very powerful tools in Python. In this module, I will implement
 ```python
 import time
 import random
+import functools
 
 
 def timeit(func):
@@ -13,6 +14,7 @@ def timeit(func):
     :param func: any function or callable entity
     """
 
+    @functools.wraps(func)  # to avoid masking
     def counter(*args, **kwargs):
         init_time = time.perf_counter_ns()
         result = func(*args, **kwargs)
