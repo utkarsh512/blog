@@ -63,6 +63,6 @@ protected:
 Note that, for pure convenience, `B`'s `operator=` covariantly overrides the return type, since it __knows__ that it's returning an instance of `B`.
 
 
-## Referenence
+## References
 
 Click [here](https://stackoverflow.com/a/14461532/11529930) to see the original stackoverflow answer.
