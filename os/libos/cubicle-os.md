@@ -1,17 +1,14 @@
 # CubicleOS: A Library OS with Software Componentisation for Practical Isolation
 
-Vasily A. Sartakov,
-v.sartakov@imperial.ac.uk,
+[Vasily A. Sartakov](mailto:v.sartakov@imperial.ac.uk),
 Imperial College London,
 United Kingdom
 
-Lluís Vilanova,
-vilanova@imperial.ac.uk,
+[Lluís Vilanova](mailto:vilanova@imperial.ac.uk),
 Imperial College London,
 United Kingdom
 
-Peter Pietzuch,
-prp@imperial.ac.uk,
+[Peter Pietzuch](mailto:prp@imperial.ac.uk),
 Imperial College London,
 United Kingdom
 
@@ -90,3 +87,43 @@ in turn, directly accesses the passed values. This becomes possible because indi
 different colours). Before the invocation of function `bar()`, component `FOO` makes the memory pages with the array accessible to `BAR`.
 After the call, the caller revokes the access permissions to the stack variable, and the components are again fully isolated.
 
+## CubicleOS Design and API
+
+To enforce the desired isolation policies, CubicleOS has four trusted components:
+
+* **Component Builder**
+  
+  * Identifies each component in the system and their public functions and generates for each function a *cross-cubicle call trampoline*
+  * The auto-generated trampoline has three tasks:
+     
+    * Switching memory access permissions across cubicles via the trusted memory monitor
+    * Switching stack pointers
+    * Copying in-stack arguments when caller and callee cubicles use different stack
+
+* **Memory Monitor**
+
+  * A trusted cubicle with an interface to manage permissions and window ownership
+  * Offers stack/heap allocation primitives which assigns pages to the calling cubicle as well as the CubicleOS specific APIs
+  
+
+| API function | Description |
+| --- | --- |
+| `wid_type cubicle_window_init()` | Initialise an empty window |
+| `cubicle_window_add(wid_type wid, void *ptr, size_t size)` | Associate memory range (ptr, ptr+size) to window wid |
+| `cubicle_window_remove(wid_type wid, void *ptr)` | Remove a memory range previously associated to window wid |
+| `cubicle_window_open(wid_type wid, cid_type cid)` | Allow cubicle cid to access contents of window wid |
+| `cubicle_window_close(wid_type wid, cid_type cid)` | Disallow cubicle cid to access contents of window wid |
+| `cubicle_window_close_all(wid_type wid)`|  Disallow all accesses to wid from other cubicles |
+| `cubicle_window_destroy(wid_type wid)` | Destroy window wid |
+
+* **Cubicle Loader**
+  
+  * Takes a set of pages owned by a cubicle, containing code and data of a component to load into the system, and switches their ownership into a newly created
+    cubicle, 
+  * It is similar to `dlopen` with following additional constraints:
+    
+    * Page identified as code are given execute-only permissions
+    * Data pages are given read/read-write permissions (as specified in binary)
+    * CubicleOS doesn't allow cubicles to change the execution permissions of any page
+    * Loader scans the code pages to ensure that they do not contain any instructions that would affect the integrity of the isolation mechanisms, i.e., cubicles
+      cannot directly execute system calls nor MPK-related operations
