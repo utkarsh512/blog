@@ -1,15 +1,29 @@
-Motivation
-==========
+# CubicleOS: A Library OS with Software Componentisation for Practical Isolation
+
+Vasily A. Sartakov,
+v.sartakov@imperial.ac.uk,
+Imperial College London,
+United Kingdom
+
+Lluís Vilanova,
+vilanova@imperial.ac.uk,
+Imperial College London,
+United Kingdom
+
+Peter Pietzuch,
+prp@imperial.ac.uk,
+Imperial College London,
+United Kingdom
+
+## Motivation
 
 The monolithic approach for library OS design raises security, robustness and reliability concerns due to lack of compartmentalisation between the libOS components. Though the microkernel approach enforces protection boundaries between components by imposing standard interfaces (based on messgae passing), such designs have seen limited uptake as they lack full POSIX compatibility. The extra copies imposed by microkernel interfaces adds further to the overhead of libOS designs.
 
-Problem Statement
-=================
+## Problem Statement
 
 To design modular and compartmentalized libOS which contains third-party components and, at the same time, enforces pratical isolation between these components.
 
-Points to consider
-------------------
+### Points to consider
 
 * Retain the flexibility of in-kernel interfaces (as in monolithic approach)
 
@@ -18,8 +32,7 @@ Points to consider
 * Minimum source code changes in application / libOS and retain full POSIX compatibility
 
 
-CubicleOS
-=========
+## CubicleOS
 
 The solution has three major contributions:
 
@@ -29,8 +42,7 @@ The solution has three major contributions:
 
 * Efficient implementation based on existing harware with trivial modifications
 
-Core Abstractions
------------------
+### Core Abstractions
 
 CubicleOS uses three core abstractions:
 
@@ -48,8 +60,7 @@ CubicleOS uses three core abstractions:
 
   * Control flow integrity when calling functions across cubicle boundaries
 
-Implementation
---------------
+### Implementation
 
 * CubicleOS is prototyped on top of Unikraft
 * Developers only need to manage the *windows* (to grant memory access across cubicles)
@@ -58,8 +69,7 @@ Implementation
   * Each cubicle has an MPK tag
   * Used for managing access permissions for windows
 
-Interfaces between Components
-=============================
+## Interfaces between Components
 
 ![image](https://user-images.githubusercontent.com/42999231/194690094-7c68644b-c555-4b64-aefc-5428c470ad35.png)
 
