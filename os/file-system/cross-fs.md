@@ -39,13 +39,9 @@ scale.
 
 It embeds the file system into the device firmware for direct-access. It acts as a central entity to satisfy fundamental file system properties. These designs miss out on benifiting from host-level multi-core parallelism.
 
-![70dfn9](https://user-images.githubusercontent.com/42999231/201324848-80dad0ac-d6c3-48c2-9ad2-f4d6ed802ec5.jpg)
-
-In summary, current User-FS, Kernel-FS, and Firmware-FS designs lack a synergistic design across the user, the kernel,
-and the firmware layers, which is critical for achieving direct storage access and scaling concurrent I/O performance
-without compromising fundamental file system properties.
-
 ## Cross-layered File System
+
+![70dfn9](https://user-images.githubusercontent.com/42999231/201324848-80dad0ac-d6c3-48c2-9ad2-f4d6ed802ec5.jpg)
 
 Unfortunately, state-of-the-art Kernel-FS, User-FS, and Firmware-FS designs suffer from three
 prominent limitations:
@@ -53,15 +49,48 @@ prominent limitations:
 * The use of an inode-centric design limits concurrent access scalability. 
 * For file sharing across processes, applications must trap into an OS for control or data plane or both.
 
+![image](https://uploads.dailydot.com/2021/07/lokimeme.png?auto=compress&fm=png)
+
+* CrossFS is a cross-layered design that disaggregates the file
+  system to exploit the capabilities of userspace, firmware,
+  and OS layers. 
+* CrossFS also achieves high end-to-end concurrency in the user-level library, I/O request queues, and
+  firmware-level file system, with or without file sharing across
+  threads and processes. 
+* CrossFS reduces system call
+  cost, provides lightweight crash consistency, and efficient
+  device-CPU scheduling.
+ 
+## The Key Observation
+
+![image](https://i.pinimg.com/originals/2a/f8/10/2af810d279a6937f1984c3fe9bb6e47b.jpg)
+
+Applications that
+perform conflicting updates to the same blocks of files, automatically resort to protecting file descriptors with applicationlevel locking. Hence, for concurrency and file sharing, CrossFS uses file descriptors as a fundamental unit of
+synchronization, enabling threads and processes with separate file descriptors to update disjoint blocks of files concurrently. CrossFS assigns each file descriptor a dedicated I/O
+queue (FD-queue) and adds non-conflicting (disjoint) block
+requests across descriptors to their independent FD-queue,
+whereas serializing conflicting block updates or access to a
+single FD-queue. Consequently, CrossFS converts the file
+synchronization problem to an I/O request ordering problem,
+enabling device-CPUs to dispatch requests across FD-queues
+concurrently.
+
+## The Guiding Principles
+
+![image](https://www.memecreator.org/static/images/memes/5068518.jpg)
+
+* **Principle 1**: For achieving high performant direct-I/O, disaggregate file system across user-level, firmware, and OS layers
+  to exploit host and device-level computing capabilities.
+* **Principle 2**: For fine-grained concurrency, align each file
+  descriptor to an independent hardware I/O queue (FD-queue),
+  and design concurrency control focused around the file descriptor abstraction.
+* **Principle 3**: To efficiently use device-CPUs, merge software
+  and hardware I/O schedulers into a single firmware scheduler, and design scheduling policies to benefit from the filedescriptor design.
+* **Principle 4**: For crash consistency in a cross-layered design,
+  protect the in-transit user data and the file system state by
+  leveraging persistence provided by byte-addressable NVMs.
+  
+## Conclusion
+
 ![image](https://user-images.githubusercontent.com/42999231/201326591-eb5d2a61-9b98-4f9a-8f7f-21f97264d7cb.png)
-
-
-It is a crosslayered direct-access file system that provides scalability,
-high concurrent access throughput, and lower access latency.
-CrossFS achieves these goals by disaggregating the file system across the user-level, the device firmware, and the OS
-layer, thereby exploiting the benefits of each layer. The
-firmware component (FirmFS) is the heart of the file system enabling applications to directly access the storage without compromising fundamental file system properties. The
-FirmFS taps into storage hardware’s I/O queues, computational capability, and I/O scheduling capability for improving
-I/O performance. The user-level library component (LibFS)
-provides POSIX compatibility and handles concurrency control and conflict resolution using the host-level CPUs (hostCPUs). The OS component sets up the initial interface between LibFS and FirmFS (e.g., I/O queues) and converts
-software-level access control to hardware security control.
