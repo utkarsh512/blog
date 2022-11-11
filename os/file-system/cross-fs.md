@@ -91,6 +91,94 @@ concurrently.
   protect the in-transit user data and the file system state by
   leveraging persistence provided by byte-addressable NVMs.
   
+## CrossFS Layers
+
+CrossFS enables unmodified POSIX-compatible applications to benefit from direct storage access.
+
+![image](https://user-images.githubusercontent.com/42999231/201344797-7b40ff7e-483b-4237-867e-a2e8a8fc16a7.png)
+
+As shown in
+the figure above, CrossFS comprises of a user-level library (LibFS),
+a firmware file system component (FirmFS), and an OS component.
+
+## Scalability
+
+File system disaggregation alone is insufficient
+for achieving I/O scalability, which demands revisiting file
+system concurrency control, reducing journaling cost, and
+designing I/O scheduling that matches the concurrency control. It is observed that file descriptors (and not inode) are a
+natural abstraction of access in most concurrent applications,
+where threads and processes use independent file descriptors
+to access/update different regions of shared or private files
+(for example, RocksDB maintains 3.5K open file descriptors). Hence, for I/O scalability, in CrossFS, file
+descriptor-based concurrency control is introduced, which allows threads
+or processes to update or access non-conflicting blocks of a
+file simultaneously.
+
+![image](https://user-images.githubusercontent.com/42999231/201345558-f66c64c0-534c-452c-a807-d14340d7352c.png)
+
+## Concurrency Control
+
+> CrossFS concurrency design turns the file
+> synchronization problem into a queue ordering problem.
+
+In CrossFS,
+file descriptors are mapped to dedicated hardware I/O queues
+to exploit storage hardware parallelism and fine-grained concurrency control. All non-conflicting requests (i.e., requests
+to different blocks) issued using a file descriptor are added
+to a file descriptor-specific queue. In contrast, conflicting requests are ordered by using a single queue. This provides an
+opportunity for device-CPUs and FirmFS to dispatch requests
+concurrently with almost zero synchronization between host
+and device-CPUs. For conflict resolution and ordering updates to blocks across file descriptors, CrossFS uses a per-inode interval tree, interval tree read-write semaphore
+(interval tree `rw-lock`), and global timestamps for concurrency control. However, unlike current file systems that must
+hold inode-level locks until request completion, CrossFS only
+acquires interval tree `rw-lock` for request ordering to FDqueues.
+
+## Challenges
+
+Moving away from an inode-centric
+to a file descriptor-centric design introduces CrossFS-specific
+challenges: 
+
+* Using fewer and wimpier device-CPUs for
+  conflict resolution and concurrency control impacts performance. 
+
+* Mapping a file descriptor to an I/O queue (a
+  device-accessible DMA memory buffer) increases the number
+  of queues that CrossFS must manage, potentially leading to
+  data loss after a crash.
+
+* Overburdening device-CPUs
+  for serving I/O requests across hundreds of file descriptor
+  queues could impact performance, specifically for blocking
+  I/O operations (e.g., read, fsync).
+
+![image](https://user-images.githubusercontent.com/42999231/201347458-11a47ef0-4b8b-45c5-9cf8-675d20cbf3e0.png)
+
+# Host Delegation
+
+To overcome the challenge of fewer (and
+wimpier) device-CPUs, CrossFS utilizes the cross-layered
+design and delegates the responsibility of request ordering to
+host-CPUs. The host-CPUs order data updates to files they
+have access to, whereas FirmFS is ultimately responsible for
+updating and maintaining metadata integrity, consistency, and
+security with POSIX-level guarantees.
+
+# Crash-Consistency and Scheduler
+
+![image](https://i.imgflip.com/170wdc.jpg)
+
+To handle crash consistency and protect data loss across tens and possibly hundreds
+of FD-queues, CrossFS uses byte-addressable, persistent
+NVMs as DMA’able and append-only FD-queues from which
+FirmFS can directly fetch requests or pool responses. CrossFS
+also designs low-cost data journaling for crash-consistency of
+firmware file system state (§4.4). Finally, for efficient scheduling of device-CPUs, CrossFS smashes traditional two-level
+I/O schedulers spread across the host-OS and the firmware
+into one FirmFS scheduler. CrossFS also equips the scheduler
+with policies that enhance file descriptor-based concurrency.
+
 ## Conclusion
 
 ![image](https://user-images.githubusercontent.com/42999231/201326591-eb5d2a61-9b98-4f9a-8f7f-21f97264d7cb.png)
